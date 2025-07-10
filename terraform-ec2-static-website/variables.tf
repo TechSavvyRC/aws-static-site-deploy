@@ -63,7 +63,7 @@ variable "key_name" {
 variable "github_repo" {
   description = "GitHub repo URL for website content"
   type        = string
-  default     = "https://github.com/TechSavvyRC/techsavvyrc-webapp.git"
+  default     = "<your_git_repository_link>"
 }
 
 variable "ec2_instance_name" {
