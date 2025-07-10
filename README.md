@@ -90,12 +90,14 @@ Example output:
 
 ## 🌱 Project Structure
 ```
-aws-static-website/
-├── main.tf
-├── variables.tf
-├── outputs.tf
-├── terraform.tfvars
-├── userdata.sh
+TechSavvyRC/aws-static-site-deploy
+├── terraform-ec2-static-website
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   ├── terraform.tfvars
+│   └── userdata.sh
+│
 └── README.md
 ```
 
