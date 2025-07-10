@@ -91,6 +91,7 @@ Example output:
 ## 🌱 Project Structure
 ```
 TechSavvyRC/aws-static-site-deploy
+│
 ├── terraform-ec2-static-website
 │   ├── main.tf
 │   ├── variables.tf
