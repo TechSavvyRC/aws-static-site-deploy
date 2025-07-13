@@ -1,181 +1,169 @@
-# TechSavvyRC WebApp Deployment Guide
 
-## 📘 Overview
-This guide walks you through deploying a static personal website on AWS using Terraform and Nginx. It includes everything from setting up your environment to using a custom domain with SSL via Cloudflare. Suitable for anyone looking to host a static website securely and professionally.
+# 🚀 Static Website Deployment with Contact Form & Secure Email Integration
 
----
-
-## 🧰 Prerequisites
-
-### 1. Terraform Installed
-- Follow the guide to install Terraform CLI:  
-  👉 https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
-
-### 2. Code Editor (Recommended: Visual Studio Code)
-- Download VS Code:  
-  👉 https://code.visualstudio.com/download
-- Get started with VS Code:  
-  👉 https://code.visualstudio.com/docs/getstarted/getting-started
-
-### 3. AWS Account & IAM User
-- Ensure you have an existing AWS account.
-- Create a separate IAM user (not the root user) with programmatic access.
-- Use this IAM user for AWS CLI setup and Terraform deployments.
+*A Step-by-Step Guide Using AWS EC2, Custom Domain, and Secure Secrets Injection*
 
 ---
 
-## 💻 AWS CLI (Windows)
+## 🔧 Prerequisites
 
-### ✅ Supported Requirements
-- 64-bit Windows (Microsoft-supported versions)
-- Admin rights required to install software
+Before proceeding, ensure you have:
 
-### 🔧 Install or Update AWS CLI
-- Download the MSI Installer:  
-  👉 https://awscli.amazonaws.com/AWSCLIV2.msi
+* ✅ A **domain name** (e.g., `yourdomain.com`)
+* ✅ A **GitHub repo** containing your static website with a contact form (e.g., HTML + PHP)
+* ✅ An **email provider** offering SMTP or API-based transactional email services
+  (*Examples*: [Sendinblue](https://www.brevo.com), [Mailgun](https://www.mailgun.com), [Postmark](https://postmarkapp.com))
+* ✅ An **email address** from your domain (e.g., `contact@yourdomain.com`) via providers like:
 
-- Or use the following command in CMD:
-```bash
-C:\> msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
-```
-- For silent install (no prompts):
-```bash
-C:\> msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-```
-
-### 🛠️ Configure AWS CLI
-```bash
-C:\> aws configure
-AWS Access Key ID [None]: XXXXXXXXXXXXXXXX
-AWS Secret Access Key [None]: XXXXXXXXXXXXXXXXXXXXXXXXXXX
-Default region name [None]: eu-north-1
-Default output format [None]: json
-```
-
-### 🧪 Verify Installation
-```bash
-C:\> aws --version
-```
-Example output:
-```
-aws-cli/2.19.1 Python/3.11.6 Windows/10 exe/AMD64 prompt/off
-```
-> 💡 If `aws` is not found, restart CMD or follow [AWS CLI Troubleshooting](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-troubleshooting.html).
-
-To verify CLI can communicate with your AWS account:
-```bash
-aws iam get-user
-```
-Example output:
-```json
-{
-    "User": {
-        "Path": "/",
-        "UserName": "user01",
-        "UserId": "xxxxxxxxxx",
-        "Arn": "arn:aws:iam::xxxxxxxx6:user/user01",
-        "CreateDate": "2025-07-09T12:47:15+00:00",
-        "PasswordLastUsed": "2025-07-09T13:11:25+00:00",
-        "Tags": [
-            {
-                "Key": "AXXXXXXXXXXXXXXXXXXXX",
-                "Value": "Terraform User"
-            }
-        ]
-    }
-}
-```
+  * [Zoho Mail](https://zoho.com/mail)
+  * [Google Workspace](https://workspace.google.com/)
+  * [ProtonMail](https://proton.me)
+* ✅ An **AWS Free Tier account**
+* ✅ [Terraform](https://www.terraform.io/downloads) installed locally
+* ✅ AWS CLI configured (`aws configure`) with access to deploy EC2, IAM, and SSM
 
 ---
 
-## 🌱 Project Structure
+## 🌐 Step 1: Set Up Your Domain and Email
+
+1. **Transfer or manage your domain** in Cloudflare or your DNS provider.
+2. **Set up your domain email** using a provider (e.g., Zoho Mail, ProtonMail).
+3. Add the required **MX, SPF, DKIM, and DMARC** records via DNS to allow verified sending.
+4. If using a transactional email provider:
+
+   * Create a sender identity (Example: `contactme@yourdomain.com`)
+   * Generate your **SMTP/API key**
+   * Enable domain authentication (SPF/DKIM) on your provider dashboard
+
+---
+
+## 🔒 Step 2: Store the API Key in AWS Parameter Store
+
+1. Open the **AWS Systems Manager Console**
+2. Go to **Parameter Store → Create parameter**
+3. Fill out:
+
+```
+Name: /webapp/api_key                # Example path
+Description: API key for transactional email
+Tier: Standard
+Type: SecureString
+KMS Key: Default (alias/aws/ssm)
+Value: <YOUR_API_KEY>               # e.g., xkeysib-abc123...
+```
+
+> 💡 Use a hierarchical name (`/webapp/api_key`) to organize keys
+
+---
+
+## 🏗 Step 3: Prepare Your GitHub Repository
+
+1. Clone a static website template (HTML, CSS, PHP)
+2. Create a `contact.php` file with the form handler logic
+3. Inside `contact.php`, include this placeholder:
+
+```php
+$config = Configuration::getDefaultConfiguration()->setApiKey(
+  'api-key',
+  '<INSERT_API_KEY>' // Will be replaced via Terraform
+);
+```
+
+You can view a complete working example of the `contact.php` script [here](https://github.com/TechSavvyRC/techsavvyrc-webapp/blob/main/forms/contact.php).
+
+4. Push your code to GitHub (e.g., `https://github.com/yourusername/your-repo`)
+
+---
+
+## 💻 Step 4: Terraform Project Structure
+
+Your project should contain:
+
 ```
 TechSavvyRC/aws-static-site-deploy
 │
-├── terraform-ec2-static-website
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   ├── terraform.tfvars
-│   └── userdata.sh
-│
-└── README.md
+└── terraform-ec2-static-website
+    │
+    ├── scripts/
+    │    └ clone_repo.sh
+    │
+    ├── providers.tf
+    ├── variables.tf
+    ├── security_group.tf
+    ├── ec2_roles.tf
+    ├── keypair.tf
+    ├── ec2_instance.tf
+    └── outputs.tf
 ```
+
+Terraform will:
+- Provision an EC2 instance (Amazon Linux 2023 Free Tier)
+- Assign an IAM role to allow secure access to AWS Parameter Store
+- Run a user_data script that:
+  - Installs Nginx, PHP, PHP-FPM, Composer, and required PHP extensions
+  - Clones your static website from a GitHub repository into /var/www/html
+  - Replaces the <insert_api_key>, <insert_email_id> and <insert_name> placeholder in contact.php using a value securely fetched from Parameter Store
+  - Installs the Brevo (Sendinblue) SDK via Composer inside /var/www/html/forms
+  - Configures and starts Nginx and PHP-FPM to serve your site and handle contact form submissionste
+
+👉 Sample Terraform code is available in this GitHub repository: `https://github.com/TechSavvyRC/aws-static-site-deploy.git`  
+> You can clone and reuse this code after updating necessary variables and configurations.
 
 ---
 
-## 🛠️ Deployment Workflow
+## ☁️ Step 5: Deploy with Terraform
 
-### 🔨 Step 1: Prepare Website Source Code
-- Design or download a free HTML/CSS website template
-- Customize content
-- Upload all static files (HTML, CSS, JS) to a public GitHub repository
-
-### 🌐 Step 2: Configure Local Environment
-- Install Terraform, AWS CLI, and Visual Studio Code
-- Configure AWS credentials using IAM user via `aws configure`
-
-### ☁️ Step 3: Define Terraform Infrastructure
-Terraform will:
-- Provision an EC2 instance (Amazon Linux 2023)
-- Install Nginx and Git using `userdata.sh`
-- Pull website code from GitHub and place it under `/var/www/html`
-- Start the Nginx service to serve your site
-
-👉 Sample Terraform code is available in this GitHub repository: `<link to your GitHub repository>`  
-> You can clone and reuse this code after updating necessary variables and configurations.
-
-### 🚀 Step 4: Deploy Infrastructure
 ```bash
-git clone https://github.com/your/repo.git
+git clone https://github.com/TechSavvyRC/aws-static-site-deploy.git
 cd aws-static-website
 terraform init
 terraform plan
 terraform apply
 ```
 
-### 🔐 Step 5: Access the Server
-```bash
-ssh -i your-key.pem ec2-user@<your-ec2-public-ip>
-```
+---
 
-### 🌍 Step 6: Visit Your Website
-Open in browser:
-```
-http://<your-ec2-public-ip>
-```
+## 🌐 Step 6: Configure DNS and SSL (Optional)
+
+1. In **Cloudflare** or your DNS provider, create an **A record**:
+
+   ```
+   Type: A
+   Name: @
+   Value: <EC2_PUBLIC_IP>
+   TTL: Auto
+   ```
+2. Enable **“Full” SSL/TLS encryption**
+3. Optionally, enable **Auto HTTPS Rewrites** and **Always Use HTTPS**
 
 ---
 
-## 🌐 Domain & SSL (Optional but Recommended)
+## 🛠 Step 7: Test and Debug
 
-### 1. Buy a Domain Name
-- Use providers like **Hostinger**, **GoDaddy**, or **Namecheap**
+* Visit `http://<your_domain>` in a browser
+* Submit the contact form
+* If no email is received:
 
-### 2. Move DNS to Cloudflare
-- Sign up for [Cloudflare](https://www.cloudflare.com)
-- Add your domain
-- Update nameservers in your domain registrar (e.g., Hostinger)
+  * Check **browser console** for JavaScript errors
+  * Check `/var/log/nginx/error.log` on EC2
+  * Check `/tmp/email_error.log` for Sendinblue/API errors
+  * Ensure `autoload.php` is present:
 
-### 3. Add DNS Records
-- Add an **A Record** in Cloudflare DNS pointing to your EC2 Public IP
-
-### 4. Enable SSL & HTTPS
-- Go to SSL/TLS settings in Cloudflare
-- Enable **Always Use HTTPS** and **Automatic HTTPS Rewrites**
-- Your site will now be available securely at:
-```
-https://yourdomain.com
-```
-> 🔐 Free SSL via Cloudflare ensures your site is trusted with a padlock icon
+    ```
+    ls -l /var/www/html/forms/vendor/autoload.php
+    ```
 
 ---
 
-## 🧹 Teardown Resources
-```bash
-terraform destroy
-```
-> ⚠️ This will delete your EC2 instance and all provisioned infrastructure.
+## ✅ Summary
+
+You now have a fully working, production-ready deployment that:
+
+* Hosts a static website using NGINX
+* Sends secure form data to a backend PHP script
+* Uses a transactional email provider via API key
+* Injects secrets securely at runtime using AWS SSM
+* Enables HTTPS via Cloudflare (optional)
 
 ---
 
@@ -207,11 +195,3 @@ Once DNS is set up and propagated, **your public IP is visible** through DNS loo
 
 ---
 
-## 📬 Need Help?
-Open an issue or reach out on GitHub.
-
----
-
-## 🖼️ Architecture Diagram
-![Architecture Diagram](https://dummyimage.com/800x400/cccccc/000000&text=GitHub+%E2%86%92+Terraform+%E2%86%92+AWS+EC2+%2B+Cloudflare+DNS+%2B+SSL+%3D+Live+Website)
-> Diagram: GitHub (Source) → Terraform (Infra) → EC2 (Web Server) → Cloudflare (DNS+SSL) → End Users
