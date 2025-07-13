@@ -1,73 +1,100 @@
-##########################################################
-# File: variables.tf
+###############################################################
 #
-# Description:
-# This file defines all input variables used across the 
-# Terraform project. These variables externalize critical 
-# values like AWS region, instance type, AMI ID, key paths, 
-# and GitHub repository URL.
+# Variable Definitions and Local Values
+# 
+# This file defines all the input variables and local values used throughout the
+# Terraform configuration. Variables allow customization of the deployment without
+# modifying the main code, while locals help create consistent naming and tagging
+# patterns across all resources. This includes AWS configuration, EC2 settings,
+# application-specific values, and standardized tags for resource management.
 #
-# Purpose:
-# - To parameterize the infrastructure setup for flexibility.
-# - To allow customization across environments (e.g., dev, prod).
-#
-# Contribution to Overall Setup:
-# This file makes the code reusable and environment-agnostic 
-# by decoupling hardcoded values from resource definitions.
-#
-# Best Practices:
-# - Use descriptive variable names and include helpful 
-#   descriptions.
-# - Store secrets (e.g., private keys) securely and avoid 
-#   committing sensitive values to version control.
-# - Set defaults for development, but override via CLI or 
-#   workspace-specific `*.tfvars` files for production.
-##########################################################
+###############################################################
 
-# AWS region where the infrastructure will be deployed
+# AWS region where all resources will be deployed
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
-  default     = "<your_aws_region>"
+  default     = "<aws_region>"    # Example: eu-north-1
 }
 
-# Named AWS CLI profile used for Terraform authentication
+# AWS CLI profile to use for authentication
 variable "aws_profile" {
   description = "AWS CLI profile for Terraform"
   type        = string
-  default     = "default"
+  default     = "<profile_name>"    # Example: default
 }
 
-# EC2 instance type to provision (Free Tier eligible: t3.micro or t2.micro)
+# EC2 instance size/type for the web application
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t3.micro"
+  default     = "<instance_type>"    # Example: t3.micro
 }
 
-# Amazon Machine Image (AMI) ID for Amazon Linux 2023
+# Amazon Machine Image ID for the EC2 instance
 variable "ami_id" {
   description = "AMI ID for Amazon Linux 2023"
   type        = string
-  default     = "ami-00c8ac9147e19828e"
+  default     = "<ami_id>"    # Example: ami-00c8ac9147e19828e
 }
 
-# Name of the EC2 Key Pair to associate with the instance
+# SSH key pair name for EC2 instance access
 variable "key_name" {
   description = "Name of the EC2 key pair"
   type        = string
-  default     = "<your_key_name>"
+  default     = "<key_pair_name>"    # Example: webapp-api-key
 }
 
-# GitHub repository URL from which the EC2 instance will clone the website
-variable "github_repo" {
-  description = "GitHub repo URL for website content"
-  type        = string
-  default     = "<your_git_repository_link>"
-}
-
+# Base name for the EC2 instance
 variable "ec2_instance_name" {
   description = "Name of the EC2 instance"
   type        = string
-  default     = "<your_key_name>"
+  default     = "<instance_name>"    # Example: my-webapp
+}
+
+# GitHub repository URL containing the web application code
+variable "github_repo" {
+  description = "GitHub repo URL for website content"
+  type        = string
+  default     = "<github_repo_url>"    # Example: https://github.com/TechSavvyRC/techsavvyrc-webapp.git
+}
+
+# AWS Systems Manager parameter path for storing the API key securely
+variable "ssm_parameter_name" {
+  description = "Full path name of the SSM SecureString parameter for the API key"
+  type        = string
+  default     = "<ssm_parameter_path>"    # Example: /my-webapp/api-keys/account
+}
+
+# Environment identifier for resource organization
+variable "environment" {
+  description = "Environment name for resource tagging"
+  type        = string
+  default     = "<environment_name>"    # Example: production
+}
+
+# Project name for consistent resource naming and tagging
+variable "project_name" {
+  description = "Project name for resource tagging"
+  type        = string
+  default     = "<project_name>"    # Example: my-webapp
+}
+
+# Local values for consistent naming and tagging across all resources
+locals {
+  common_tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "<manager_by>"    # Example: Terraform
+    Owner       = "<owner_name>"    # Example: Steve Rogers
+  }
+  
+  # Instance name with environment suffix
+  instance_name = "${var.ec2_instance_name}-${var.environment}"
+  
+  # Security group name
+  security_group_name = "${var.project_name}-sg-${var.environment}"
+  
+  # IAM role name
+  iam_role_name = "${var.project_name}-role-${var.environment}"
 }

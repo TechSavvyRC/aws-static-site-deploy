@@ -1,29 +1,19 @@
-############################################################
-# File: security_group.tf
-#
-# Description:
-# Defines the AWS Security Group used by the EC2 instance
-# hosting the static web application.
-#
-# Purpose:
-# - Controls inbound (ingress) and outbound (egress) traffic
-#   to the EC2 instance.
-# - Opens necessary ports for SSH (22), HTTP (80), and HTTPS (443).
-#
-# Contribution to Overall Setup:
-# This resource ensures that:
-# - You can securely SSH into the instance.
-# - Web traffic (HTTP/HTTPS) is allowed from the internet.
-# - The instance can make outbound calls if needed (e.g., for package installs).
-#
-# Best Practices:
-# - Restrict SSH (`port 22`) to known IP ranges in production.
-# - Keep rules tightly scoped for enhanced security.
-############################################################
+###############################################################
+# 
+# Security Group Configuration
+# 
+# This file defines the AWS Security Group that controls network access to the
+# EC2 instance hosting the web application. It acts as a virtual firewall,
+# specifying which inbound and outbound traffic is allowed. The security group
+# opens the necessary ports for SSH access (22), HTTP web traffic (80), and
+# HTTPS secure web traffic (443), while allowing all outbound traffic for
+# system updates and application functionality.
+# 
+###############################################################
 
-# Define a security group to allow SSH, HTTP, and HTTPS traffic
+# Security group defining firewall rules for the web application EC2 instance
 resource "aws_security_group" "web_sg" {
-  name        = "<your_security_group_name>"
+  name        = "techsavvyrc-sg"
   description = "Allow SSH, HTTP, HTTPS"
 
   # Allow incoming SSH traffic (port 22) from all IPs
