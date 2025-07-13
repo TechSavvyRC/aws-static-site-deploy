@@ -9,6 +9,8 @@ set -euo pipefail  # Exit on error, undefined vars, and pipe failures
 GITHUB_REPO="${github_repo}"
 SSM_PARAMETER_NAME="${ssm_parameter_name}"
 AWS_REGION="${aws_region}"
+CONTACT_EMAIL="${contact_email_id}"
+CONTACT_NAME="${contact_name}"
 
 # Derived variables - THESE ARE SHELL VARIABLES (MUST ESCAPE)
 WEB_ROOT="/var/www/html"
@@ -115,6 +117,8 @@ cp "$${PHP_CONFIG_FILE}" "$${PHP_CONFIG_FILE}.backup" || error_exit "Failed to c
 
 # Replace the placeholder with the actual API key
 sed -i "s|<insert_api_key>|$${API_KEY}|g" "$${PHP_CONFIG_FILE}" || error_exit "Failed to inject API key"
+sed -i "s|<insert_email_id>|$${CONTACT_EMAIL}|g" "$${PHP_CONFIG_FILE}" || error_exit "Failed to inject API key"
+sed -i "s|<insert_name>|$${CONTACT_NAME}|g" "$${PHP_CONFIG_FILE}" || error_exit "Failed to inject API key"
 
 # Verify the replacement was successful
 if grep -q "<insert_api_key>" "$${PHP_CONFIG_FILE}"; then

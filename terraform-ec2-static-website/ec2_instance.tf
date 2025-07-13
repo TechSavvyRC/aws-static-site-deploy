@@ -15,9 +15,11 @@ data "template_file" "user_data" {
   template = file("${path.module}/scripts/clone_repo.sh")
   
   vars = {
+    aws_region          = var.aws_region
     github_repo         = var.github_repo
     ssm_parameter_name  = var.ssm_parameter_name
-    aws_region          = var.aws_region
+    contact_email_id    = var.contact_email_id
+    contact_name        = var.contact_name
   }
 }
 
@@ -33,9 +35,11 @@ resource "aws_instance" "web" {
   iam_instance_profile = aws_iam_instance_profile.web_profile.name
 
   user_data = base64encode(templatefile("${path.module}/scripts/clone_repo.sh", {
-    github_repo        = var.github_repo
-    ssm_parameter_name = var.ssm_parameter_name
-    aws_region         = var.aws_region
+    aws_region          = var.aws_region
+    github_repo         = var.github_repo
+    ssm_parameter_name  = var.ssm_parameter_name
+    contact_email_id    = var.contact_email_id
+    contact_name        = var.contact_name
   }))
 
   depends_on = [

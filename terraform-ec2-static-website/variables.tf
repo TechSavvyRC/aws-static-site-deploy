@@ -66,6 +66,20 @@ variable "ssm_parameter_name" {
   default     = "<ssm_parameter_path>"    # Example: /my-webapp/api-keys/account
 }
 
+# Email address where website contact form messages are sent
+variable "contact_email_id" {
+  description = "Email address configured for website contact form to receive messages"
+  type        = string
+  default     = "<your_email_id>"    # Example: contactme@yourdomain.com
+}
+
+# Display name associated with the contact email address
+variable "contact_name" {
+  description = "Display name assigned to the contact email address"
+  type        = string
+  default     = "<your_name>"    # Example: Steve Rogers
+}
+
 # Environment identifier for resource organization
 variable "environment" {
   description = "Environment name for resource tagging"
