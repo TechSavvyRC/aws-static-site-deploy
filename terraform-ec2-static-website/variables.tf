@@ -56,7 +56,7 @@ variable "ec2_instance_name" {
 variable "github_repo" {
   description = "GitHub repo URL for website content"
   type        = string
-  default     = "<github_repo_url>"    # Example: https://github.com/TechSavvyRC/techsavvyrc-webapp.git
+  default     = "<github_repo_url>"    # Example: https://github.com/yourusername/your-repo
 }
 
 # AWS Systems Manager parameter path for storing the API key securely
